@@ -1,0 +1,18 @@
+# Build output
+SafeguardApp/.build/
+SafeguardApp/.build-*/
+SafeguardApp/build/
+dist/
+*.dmg
+
+# Python
+__pycache__/
+*.py[cod]
+
+# macOS
+.DS_Store
+._*
+
+# Local state and snapshots
+.snapshots/
+*.log

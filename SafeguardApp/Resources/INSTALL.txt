@@ -1,0 +1,26 @@
+Safeguard — install
+
+1. Drag Safeguard into the Applications folder.
+
+2. Open it. It is signed but not notarized, so macOS blocks the first launch:
+   right-click Safeguard > Open > Open.
+   If there is no Open button: System Settings > Privacy & Security >
+   "Open Anyway", or in Terminal:
+     xattr -dr com.apple.quarantine /Applications/Safeguard.app
+
+3. Full Disk Access: System Settings > Privacy & Security > Full Disk Access >
+   add /Applications/Safeguard.app, then quit and reopen Safeguard.
+   Without it Safari and Chrome history stay empty; live browser requests still work.
+
+4. Browser monitoring: Safeguard > Browser > Install extension, then load the
+   folder it puts on your Desktop as an unpacked extension in Chrome, Edge,
+   Brave, Vivaldi or Opera.
+
+5. AI advisor (optional): Settings > Advisor, paste your own API key.
+   It is stored in your Keychain, never on disk.
+
+Requirements: macOS 14+, Apple silicon or Intel, and Python 3 at
+/usr/bin/python3. If it is missing, run: xcode-select --install
+
+Everything stays on this Mac. No account, no telemetry, no network except the
+AI provider you configure.
