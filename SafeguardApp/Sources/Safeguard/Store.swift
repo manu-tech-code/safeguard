@@ -403,12 +403,27 @@ final class AppStore {
     }
 
     func setAcknowledged(_ alert: ThreatAlert, _ on: Bool) async {
+        await setAcknowledged([alert.id], on)
+    }
+
+    /// One engine call for the whole batch; the engine takes any number of ids.
+    func setAcknowledged(_ ids: [String], _ on: Bool) async {
+        guard !ids.isEmpty else { return }
         do {
-            try await Engine.run([on ? "ack" : "unack", alert.id])
-            if let i = status?.alerts.firstIndex(where: { $0.id == alert.id }) {
-                withAnimation { status?.alerts[i].acked = on }
+            try await Engine.run([on ? "ack" : "unack"] + ids)
+            withAnimation {
+                for id in ids {
+                    if let i = status?.alerts.firstIndex(where: { $0.id == id }) {
+                        status?.alerts[i].acked = on
+                    }
+                }
             }
-            show(on ? "Marked as reviewed" : "Moved back to active threats")
+            if ids.count == 1 {
+                show(on ? "Marked as reviewed" : "Moved back to active threats")
+            } else {
+                show(on ? "\(ids.count) findings marked as reviewed"
+                        : "\(ids.count) findings moved back to active")
+            }
         } catch {
             errorMessage = error.localizedDescription
         }

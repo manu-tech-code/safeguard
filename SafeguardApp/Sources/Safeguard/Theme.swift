@@ -405,6 +405,30 @@ struct Dot: View {
     var body: some View { DotShape().fill(color).frame(width: size, height: size) }
 }
 
+struct SelectBox: View {
+    let on: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            RoundedRectangle(cornerRadius: Theme.corner(5), style: .continuous)
+                .fill(on ? Theme.accent : Color.clear)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.corner(5), style: .continuous)
+                        .strokeBorder(on ? Theme.accent : Theme.line, lineWidth: 1.5))
+                .overlay(
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(Theme.onFill)
+                        .opacity(on ? 1 : 0))
+                .frame(width: 16, height: 16)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(on ? "Deselect finding" : "Select finding")
+    }
+}
+
 struct Pill: View {
     let text: String
     var color: Color = Theme.text2

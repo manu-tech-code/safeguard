@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct ThreatsView: View {
@@ -6,6 +7,8 @@ struct ThreatsView: View {
     @State private var showReviewed = false
     @State private var query = ""
     @State private var showDigest = false
+    @State private var selection = Set<String>()
+    @State private var lastClicked: Int?
 
     private var alerts: [ThreatAlert] {
         (store.status?.alerts ?? [])
@@ -17,6 +20,53 @@ struct ThreatsView: View {
 
     private var selected: ThreatAlert? {
         alerts.first { $0.id == store.selectedAlertID } ?? alerts.first
+    }
+
+    private var allSelected: Bool { !alerts.isEmpty && selection.count == alerts.count }
+
+    private func toggle(_ alert: ThreatAlert, at index: Int) {
+        if NSEvent.modifierFlags.contains(.shift), let from = lastClicked, from != index {
+            let range = from < index ? from...index : index...from
+            selection.formUnion(alerts[range].map(\.id))
+        } else if selection.contains(alert.id) {
+            selection.remove(alert.id)
+        } else {
+            selection.insert(alert.id)
+        }
+        lastClicked = index
+    }
+
+    private func applySelection(reviewed: Bool) {
+        let ids = Array(selection)
+        Task {
+            await store.setAcknowledged(ids, reviewed)
+            selection.subtract(ids)
+        }
+    }
+
+    @ViewBuilder
+    private var selectionBar: some View {
+        HStack(spacing: 10) {
+            Button(allSelected ? "Deselect all" : "Select all") {
+                selection = allSelected ? [] : Set(alerts.map(\.id))
+            }
+            .buttonStyle(GhostButtonStyle(compact: true))
+            .fixedSize()
+
+            if !selection.isEmpty {
+                Spacer(minLength: 0)
+                Button("Mark \(selection.count) reviewed") { applySelection(reviewed: true) }
+                    .buttonStyle(LightButtonStyle(compact: true))
+                    .fixedSize()
+                Button("Unmark") { applySelection(reviewed: false) }
+                    .buttonStyle(GhostButtonStyle(compact: true))
+                    .fixedSize()
+            } else {
+                Spacer(minLength: 0)
+                Text("Shift-click for a range")
+                    .font(.ui(11.5)).foregroundStyle(Theme.dim).lineLimit(1)
+            }
+        }
     }
 
     var body: some View {
@@ -45,6 +95,7 @@ struct ThreatsView: View {
                             }
                             .buttonStyle(GhostButtonStyle(compact: true))
                         }
+                        if !alerts.isEmpty { selectionBar }
                         if alerts.isEmpty {
                             EmptyNote(symbol: "checkmark.shield", title: "Nothing here",
                                       message: query.isEmpty && filter == nil
@@ -54,9 +105,16 @@ struct ThreatsView: View {
                         } else {
                             ScrollView {
                                 LazyVStack(spacing: 8) {
-                                    ForEach(alerts) { a in
-                                        ThreatRow(alert: a, selected: a.id == selected?.id)
-                                            .onTapGesture { store.selectedAlertID = a.id }
+                                    ForEach(Array(alerts.enumerated()), id: \.element.id) { index, a in
+                                        HStack(spacing: 10) {
+                                            SelectBox(on: selection.contains(a.id)) { toggle(a, at: index) }
+                                            ThreatRow(alert: a, selected: a.id == selected?.id)
+                                                .contentShape(Rectangle())
+                                                .onTapGesture {
+                                                    lastClicked = index
+                                                    store.selectedAlertID = a.id
+                                                }
+                                        }
                                     }
                                 }
                             }
@@ -80,6 +138,15 @@ struct ThreatsView: View {
             }
         }
         .sheet(isPresented: $showDigest) { AdvisorDigestSheet() }
+        .onChange(of: alerts.map(\.id)) { _, ids in
+            selection.formIntersection(Set(ids))
+        }
+        .task {
+            // Snapshot hook: show the bulk bar populated.
+            if ProcessInfo.processInfo.environment["SAFEGUARD_SELECT_MANY"] == "1", selection.isEmpty {
+                selection = Set(alerts.prefix(3).map(\.id))
+            }
+        }
     }
 
     private func countFor(_ s: Severity?) -> Int {

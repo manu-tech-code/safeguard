@@ -6,7 +6,7 @@ A personal security monitor for your Mac. It watches for the things attackers ac
 
 `SafeguardApp/` is a native macOS app (SwiftUI, macOS 14+) with a custom dark interface. It has ten screens:
 - **Overview:** security score, threat level, activity chart, protections, findings and watch zones.
-- **Threats:** filter and search findings; for each one, mark it reviewed, trust the program, accept the change, or ask the Advisor to explain it and propose a fix.
+- **Threats:** filter and search findings; for each one, mark it reviewed, trust the program, accept the change, or ask the Advisor to explain it and propose a fix. Tick several findings (shift-click selects a range) and mark them reviewed in one action.
 - **Protection:** one card per safeguard, with Open Settings and, for a failing check, Ask Safeguard.
 - **Network:** live connections with app icons and signatures, open ports, DNS servers and mounted network drives.
 - **Startup Items:** launch agents and daemons, the login items macOS keeps hidden, ransomware tripwires, and the sensitive files Safeguard watches.
